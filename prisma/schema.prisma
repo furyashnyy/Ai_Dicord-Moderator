@@ -1,0 +1,127 @@
+// Prisma schema for the AI Discord moderator.
+// SQLite has no native array/vector type, so list-like fields (keywords,
+// embedding vectors) are stored as JSON-encoded strings and parsed in code.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+/// Per-guild configuration and moderation settings.
+model GuildConfig {
+  id                  String    @id // Discord guild (server) id
+  enabled             Boolean   @default(false)
+  logChannelId        String?
+  rulesChannelId      String?
+  // What to do when general toxicity is high but no specific rule matched:
+  // "ignore" | "warn" | "delete"
+  defaultAction       String    @default("ignore")
+  similarityThreshold Float     @default(0.55)
+  toxicityThreshold   Float     @default(0.8)
+  lastSyncAt          DateTime?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  rules             GuildRule[]
+  warnings          Warning[]
+  escalations       EscalationStep[]
+  whitelistRoles    WhitelistRole[]
+  whitelistChannels WhitelistChannel[]
+  logs              ModerationLog[]
+}
+
+/// A single parsed rule extracted from the guild's rules channel.
+model GuildRule {
+  id      Int         @id @default(autoincrement())
+  guildId String
+  guild   GuildConfig @relation(fields: [guildId], references: [id], onDelete: Cascade)
+
+  rawText  String
+  // JSON array of explicit keywords/phrases, e.g. ["хуесос","петух"]
+  keywords String @default("[]")
+  // JSON array of floats — semantic embedding of rawText (nullable if
+  // embeddings are disabled or model unavailable at sync time).
+  embedding String?
+
+  // "warn" | "mute" | "kick" | "ban" | "delete" | null (=> use guild default/escalation)
+  punishmentType     String?
+  // Duration in seconds (used for "mute"). null => model/role default.
+  punishmentDuration Int?
+  // Optional per-rule similarity override; null => guild-level threshold.
+  similarityThreshold Float?
+
+  sourceMessageId String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  logs     ModerationLog[]
+  warnings Warning[]
+
+  @@index([guildId])
+}
+
+/// A warning issued to a member (drives escalation).
+model Warning {
+  id      Int         @id @default(autoincrement())
+  guildId String
+  guild   GuildConfig @relation(fields: [guildId], references: [id], onDelete: Cascade)
+  userId  String
+  reason  String
+  ruleId  Int?
+  rule    GuildRule?  @relation(fields: [ruleId], references: [id], onDelete: SetNull)
+  active  Boolean     @default(true)
+  createdAt DateTime  @default(now())
+
+  @@index([guildId, userId])
+}
+
+/// Escalation ladder: at N active warnings, apply `action`.
+model EscalationStep {
+  id        Int         @id @default(autoincrement())
+  guildId   String
+  guild     GuildConfig @relation(fields: [guildId], references: [id], onDelete: Cascade)
+  threshold Int // number of active warnings that triggers this step
+  action    String // "mute" | "kick" | "ban"
+  duration  Int? // seconds, for "mute"
+
+  @@unique([guildId, threshold])
+}
+
+model WhitelistRole {
+  id      String      @id @default(cuid())
+  guildId String
+  guild   GuildConfig @relation(fields: [guildId], references: [id], onDelete: Cascade)
+  roleId  String
+
+  @@unique([guildId, roleId])
+}
+
+model WhitelistChannel {
+  id        String      @id @default(cuid())
+  guildId   String
+  guild     GuildConfig @relation(fields: [guildId], references: [id], onDelete: Cascade)
+  channelId String
+
+  @@unique([guildId, channelId])
+}
+
+/// Audit log of every moderation action taken.
+model ModerationLog {
+  id             Int         @id @default(autoincrement())
+  guildId        String
+  guild          GuildConfig @relation(fields: [guildId], references: [id], onDelete: Cascade)
+  userId         String
+  messageContent String
+  action         String // "warn" | "mute" | "kick" | "ban" | "delete" | "none"
+  ruleId         Int?
+  rule           GuildRule?  @relation(fields: [ruleId], references: [id], onDelete: SetNull)
+  reason         String
+  score          Float?
+  createdAt      DateTime    @default(now())
+
+  @@index([guildId, createdAt])
+}
