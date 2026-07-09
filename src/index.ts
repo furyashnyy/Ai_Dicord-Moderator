@@ -5,6 +5,7 @@ import { disconnectDb } from './db.js';
 import * as readyEvent from './events/ready.js';
 import * as messageCreateEvent from './events/messageCreate.js';
 import * as interactionCreateEvent from './events/interactionCreate.js';
+import * as guildCreateEvent from './events/guildCreate.js';
 
 const client = new Client({
   intents: [
@@ -20,6 +21,7 @@ const client = new Client({
 client.once(readyEvent.name, (...args) => void readyEvent.execute(args[0]));
 client.on(messageCreateEvent.name, (...args) => void messageCreateEvent.execute(args[0]));
 client.on(interactionCreateEvent.name, (...args) => void interactionCreateEvent.execute(args[0]));
+client.on(guildCreateEvent.name, (...args) => void guildCreateEvent.execute(args[0]));
 
 client.on('error', (err) => logger.error('Client error:', err.message));
 client.on('warn', (info) => logger.warn('Client warning:', info));

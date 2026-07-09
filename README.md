@@ -82,6 +82,13 @@ cp .env.example .env
 
 Then pick a launch method.
 
+> **Slash commands register automatically** when the bot starts (controlled by
+> `AUTO_REGISTER_COMMANDS`, default `true`). With `ALLOWED_GUILD_IDS` (or
+> `DEV_GUILD_ID`) set, they appear **instantly** in those servers; with neither,
+> they register globally (first sync can take up to ~1h). No manual deploy step
+> is needed — `npm run deploy-commands` / `DEPLOY_COMMANDS=true` remain available
+> as an optional fallback.
+
 ### Method 1 — `start-bot.sh` (bare metal)
 
 A single script that installs dependencies, generates the Prisma client,
@@ -209,7 +216,8 @@ to the configured log channel.
 | `/purge <amount> [user]` | Manage Messages | Bulk-delete up to 100 recent messages (optionally from one user) |
 | `/rules` | anyone | Show this server's parsed rules |
 
-Register/refresh all commands with `npm run deploy-commands` (or
+All commands register automatically on startup (see the note under **Setup**).
+To force a re-sync you can still run `npm run deploy-commands` (or
 `DEPLOY_COMMANDS=true docker compose up`).
 
 ---
@@ -240,7 +248,8 @@ src/
     handlers.ts          /moderation subcommand + modal handlers
     modCommands.ts       Manual command builders (warn/ban/timeout/…)
     modHandlers.ts       Manual command handlers
-  events/                ready / messageCreate / interactionCreate
+    register.ts          Auto-registers slash commands (guild-scoped or global)
+  events/                ready / messageCreate / interactionCreate / guildCreate
   util/                  text normalization, permission checks
 prisma/schema.prisma     SQLite schema (rules, warnings, logs, whitelist, …)
 ```
