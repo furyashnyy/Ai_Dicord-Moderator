@@ -40,6 +40,7 @@ export const config = {
   clientId: required('DISCORD_CLIENT_ID'),
   allowedGuildIds: list('ALLOWED_GUILD_IDS'),
   devGuildId: optional('DEV_GUILD_ID', ''),
+  autoRegisterCommands: bool('AUTO_REGISTER_COMMANDS', true),
 
   databaseUrl: optional('DATABASE_URL', 'file:./data/moderation.db'),
 
