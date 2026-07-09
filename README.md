@@ -221,15 +221,22 @@ prisma/schema.prisma     SQLite schema (rules, warnings, logs, whitelist, …)
 
 ## Configuration reference
 
-See `.env.example` for every variable with inline documentation. The most
-important ones:
+Copy `.env.example` to `.env` and fill in the values below. The most important
+ones:
 
-- `DISCORD_TOKEN`, `DISCORD_CLIENT_ID` — credentials (required)
-- `ALLOWED_GUILD_IDS` — comma-separated guilds the bot may moderate
+- `DISCORD_TOKEN`, `DISCORD_CLIENT_ID` — credentials (**required**)
+- `ALLOWED_GUILD_IDS` — comma-separated guilds the bot may moderate (empty =
+  every guild)
+- `DEV_GUILD_ID` — register slash commands to one guild for instant updates
+  (empty = global registration)
+- `DATABASE_URL` — SQLite location (default `file:./data/moderation.db`)
 - `ENABLE_TOXICITY_MODEL`, `TOXICITY_MODEL` — ML toxicity model toggle/name
 - `ENABLE_EMBEDDINGS`, `EMBEDDING_MODEL` — semantic matching toggle/name
+- `USE_QUANTIZED_MODELS` — use int8 weights (recommended; smaller RAM)
+- `TRANSFORMERS_CACHE` — where model weights are cached (default `./models`)
 - `DEFAULT_SIMILARITY_THRESHOLD`, `DEFAULT_TOXICITY_THRESHOLD` — starting
   thresholds for new guilds (tunable per-guild and per-rule afterwards)
+- `LOG_LEVEL` — `debug` | `info` | `warn` | `error`
 
 ## License
 
