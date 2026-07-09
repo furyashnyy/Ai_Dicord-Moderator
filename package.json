@@ -1,0 +1,30 @@
+{
+  "name": "ai-discord-moderator",
+  "version": "1.0.0",
+  "description": "Discord moderation bot that enforces the rules the server owner writes in a rules channel, using local AI (toxicity classifier + multilingual embeddings) with a RU+EN profanity lexicon.",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "prisma generate && tsc -p tsconfig.json",
+    "start": "node dist/index.js",
+    "dev": "tsx watch src/index.ts",
+    "deploy-commands": "tsx src/deployCommands.ts",
+    "prisma:generate": "prisma generate",
+    "prisma:push": "prisma db push",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.22.0",
+    "@xenova/transformers": "^2.17.2",
+    "discord.js": "^14.16.3",
+    "dotenv": "^16.4.7"
+  },
+  "devDependencies": {
+    "@types/node": "^20.17.0",
+    "prisma": "^5.22.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  }
+}
