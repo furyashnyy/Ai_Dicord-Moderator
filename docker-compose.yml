@@ -1,0 +1,25 @@
+# Run the moderator with: `docker compose up -d --build`
+# Register slash commands once with: `DEPLOY_COMMANDS=true docker compose up --build`
+# (or one-off: `docker compose run --rm -e DEPLOY_COMMANDS=true bot node dist/deployCommands.js`)
+services:
+  bot:
+    build: .
+    image: ai-discord-moderator
+    container_name: ai-discord-moderator
+    restart: unless-stopped
+    # Reads DISCORD_TOKEN, DISCORD_CLIENT_ID, ALLOWED_GUILD_IDS, model flags, etc.
+    env_file:
+      - .env
+    environment:
+      # Override paths so the SQLite DB and model cache land on the mounted
+      # volumes regardless of what .env says.
+      DATABASE_URL: "file:/app/data/moderation.db"
+      TRANSFORMERS_CACHE: "/app/models"
+      # Set to "true" to (re)register slash commands on startup.
+      DEPLOY_COMMANDS: "${DEPLOY_COMMANDS:-false}"
+    volumes:
+      # Persist the database and downloaded model weights across restarts.
+      - ./data:/app/data
+      - ./models:/app/models
+    # onnxruntime + node stay well under this; adjust if you enable both models.
+    mem_limit: 1500m

@@ -73,34 +73,64 @@ too tight, set `ENABLE_EMBEDDINGS=false` (keeps toxicity model + lexicon) or
 
 ## Setup
 
+First, configure the environment (both launch methods need this):
+
 ```bash
-# 1. Install dependencies
-npm install
-
-# 2. Configure environment
 cp .env.example .env
-#    then edit .env — set DISCORD_TOKEN, DISCORD_CLIENT_ID, ALLOWED_GUILD_IDS
+#  then edit .env — set DISCORD_TOKEN, DISCORD_CLIENT_ID, ALLOWED_GUILD_IDS
+```
 
-# 3. Create the SQLite database + Prisma client
-npm run prisma:push        # runs `prisma db push` (creates ./data/moderation.db)
+Then pick a launch method.
+
+### Method 1 — `start-bot.sh` (bare metal)
+
+A single script that installs dependencies, generates the Prisma client,
+creates/updates the SQLite database, optionally registers slash commands, then
+starts the bot.
+
+```bash
+./start-bot.sh --deploy     # first run: also registers the /moderation command
+./start-bot.sh              # subsequent runs (build + start, production)
+./start-bot.sh --dev        # watch/auto-reload mode
+./start-bot.sh --help       # all options
+```
+
+### Method 2 — Docker Compose
+
+Builds an image, persists the database (`./data`) and model cache (`./models`)
+in volumes, and restarts automatically.
+
+```bash
+# First run: build, apply schema, register slash commands, start (detached)
+DEPLOY_COMMANDS=true docker compose up -d --build
+
+# Normal start / restart
+docker compose up -d
+
+# Logs / stop
+docker compose logs -f
+docker compose down
+```
+
+`DEPLOY_COMMANDS=true` registers the `/moderation` command on startup — set it
+only when you add or change commands (Discord keeps them registered otherwise).
+The Compose file caps memory at 1.5 GB and mounts `./data` and `./models`.
+
+### Method 3 — Manual npm scripts
+
+```bash
+npm install
+npm run prisma:push        # creates ./data/moderation.db
 npm run prisma:generate
-
-# 4. Register the /moderation slash command
-#    (set DEV_GUILD_ID in .env for instant, guild-scoped registration)
-npm run deploy-commands
-
-# 5a. Development (auto-reload)
-npm run dev
-
-# 5b. Production
-npm run build
-npm start
+npm run deploy-commands     # set DEV_GUILD_ID in .env for instant guild-scoped registration
+npm run build && npm start  # or: npm run dev
 ```
 
 > The first run downloads the model weights into `./models` (configurable via
 > `TRANSFORMERS_CACHE`). This needs outbound access to `huggingface.co` once;
 > afterwards it runs from cache. If the download is unavailable, the bot starts
-> in lexicon-only mode automatically.
+> in lexicon-only mode automatically. Building the Docker image also fetches the
+> native `onnxruntime`/`sharp` binaries, so the build host needs outbound HTTPS.
 
 ---
 

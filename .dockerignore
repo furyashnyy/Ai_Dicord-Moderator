@@ -1,0 +1,12 @@
+node_modules
+dist
+data
+models
+.cache
+.transformers-cache
+.git
+.gitignore
+.env
+*.log
+npm-debug.log*
+README.md
