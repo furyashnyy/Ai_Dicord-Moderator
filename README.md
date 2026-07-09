@@ -189,6 +189,29 @@ first-class feature:
 Owners, admins, `Manage Server` holders, bots, and whitelisted roles/channels
 are always exempt, and the rules channel and log channel are never moderated.
 
+### Manual moderation commands
+
+Alongside the automatic rule-based moderation, the mod team gets direct
+commands. Each is gated by the matching Discord permission (the guild owner
+always passes), shares the same warning/escalation/audit-log system, and posts
+to the configured log channel.
+
+| Command | Permission | Purpose |
+|---|---|---|
+| `/warn <user> <reason>` | Moderate Members | Warn a member (runs the escalation ladder) |
+| `/warnings <user>` | Moderate Members | Show a member's active warnings |
+| `/clearwarnings <user>` | Moderate Members | Clear a member's active warnings |
+| `/timeout <user> <duration> [reason]` | Moderate Members | Mute for a duration (`30m`, `1h`, `1d`, `45s`, `1w`; bare number = minutes) |
+| `/untimeout <user> [reason]` | Moderate Members | Remove a timeout |
+| `/kick <user> [reason]` | Kick Members | Kick a member |
+| `/ban <user> [reason] [delete-days]` | Ban Members | Ban a member (optionally delete 0–7 days of messages) |
+| `/unban <user-id> [reason]` | Ban Members | Unban by user ID |
+| `/purge <amount> [user]` | Manage Messages | Bulk-delete up to 100 recent messages (optionally from one user) |
+| `/rules` | anyone | Show this server's parsed rules |
+
+Register/refresh all commands with `npm run deploy-commands` (or
+`DEPLOY_COMMANDS=true docker compose up`).
+
 ---
 
 ## Project layout
@@ -196,7 +219,7 @@ are always exempt, and the rules channel and log channel are never moderated.
 ```
 src/
   index.ts               Client bootstrap, intents, graceful shutdown
-  deployCommands.ts      Registers /moderation (guild or global)
+  deployCommands.ts      Registers all slash commands (guild or global)
   config.ts              Typed env parsing + allow-list gate
   db.ts                  Prisma client + per-guild config helper
   ai/
@@ -209,11 +232,14 @@ src/
     ruleService.ts       Sync/CRUD, embedding storage, hot cache
   moderation/
     checker.ts           The 3-stage decision pipeline
-    punishment.ts        Delete/warn/mute/kick/ban + escalation + logging
+    punishment.ts        Auto-moderation: delete/warn + escalation + logging
+    actions.ts           Shared timeout/kick/ban/log helpers + duration parsing
     escalation.ts        Warning-count ladder
   commands/
-    moderationCommand.ts SlashCommandBuilder definition
-    handlers.ts          Subcommand + modal handlers
+    moderationCommand.ts /moderation SlashCommandBuilder definition
+    handlers.ts          /moderation subcommand + modal handlers
+    modCommands.ts       Manual command builders (warn/ban/timeout/…)
+    modHandlers.ts       Manual command handlers
   events/                ready / messageCreate / interactionCreate
   util/                  text normalization, permission checks
 prisma/schema.prisma     SQLite schema (rules, warnings, logs, whitelist, …)

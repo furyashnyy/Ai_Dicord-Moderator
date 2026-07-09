@@ -1,6 +1,8 @@
 import { Events, MessageFlags, type Interaction } from 'discord.js';
 import { logger } from '../logger.js';
 import { handleModerationCommand, handleRuleEditModal } from '../commands/handlers.js';
+import { handleModCommand } from '../commands/modHandlers.js';
+import { modCommandNames } from '../commands/modCommands.js';
 
 export const name = Events.InteractionCreate;
 
@@ -9,6 +11,8 @@ export async function execute(interaction: Interaction): Promise<void> {
     if (interaction.isChatInputCommand()) {
       if (interaction.commandName === 'moderation') {
         await handleModerationCommand(interaction);
+      } else if (modCommandNames.has(interaction.commandName)) {
+        await handleModCommand(interaction);
       }
       return;
     }
